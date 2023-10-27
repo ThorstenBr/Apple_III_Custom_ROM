@@ -213,7 +213,11 @@ MONZ:      LDX     STACK        ; RESTORE STACK TO ORIGINAL LOCATION
 SCAN:      JSR     ZSTATE       ; SET REGULAR SCAN
 NXTINP:    JSR     GETNUM       ; ATTEMPT TO READ HEX BYTE
            STY     YSAV         ; STORE CURRENT INPUT POINTER
+.IFDEF BANK0ROM
+           LDY     #$12+1       ; 18+1 COMMANDS for BANK0ROM: we're adding one custom command (disassembler)
+.ELSE
            LDY     #$12         ; 18 COMMANDS
+.ENDIF
 CMDSRCH:   DEY
            BMI     MON          ; GIVE UP IF UNRECOGNIZABLE
            CMP     CMDTAB,Y     ; FOUND?
@@ -263,6 +267,7 @@ ZSTATE:    LDY     #00
            STY     STATE        ; RESET STATE OF SCAN
 DIGRET:    RTS
 CMDTAB     =    *
+; characters are encoded: (ASCII^0xB0)+$88+1 (due to conversion in GETNUM routine, to check for digits)
            .BYTE   $00          ; G    =GP (CALL) SUBROUTINE
            .BYTE   $03          ; J    =JUMP (CONT) PROGRAM
            .BYTE   $06          ; M    =MOVE MEMORY
@@ -280,6 +285,9 @@ CMDTAB     =    *
            .BYTE   $A8          ; /    =COMMAND SEPARATOR
            .BYTE   $95          ; <    =DEST/SOURCE SEPARATOR
            .BYTE   $C6          ; CR   =CARRIAGE RETURN
+.IFDEF BANK0ROM
+           .BYTE   $05          ; L    =LIST/DISASSEMBLER
+.ENDIF
 
 CMDVEC     =    *
            .BYTE   $90          ; GO-1
@@ -299,11 +307,22 @@ CMDVEC     =    *
            .BYTE   $AD          ; SEP-1
            .BYTE   $A4          ; DEST-1
            .BYTE   $39          ; CRMON-1
+.IFDEF BANK0ROM
+           .BYTE   <LIST-1      ; LIST-1
+.import NXTA4
+.export NXTA1
+SPACER1 = *
+.REPEAT $F994-SPACER1
+           .BYTE $FF
+.ENDREP
+;F994
+.ELSE
 ;
 ;
 NXTA4:     INC     A4L          ; BUMP 16 BIT POINTERS
            BNE     NXTA1
            INC     A4H
+.ENDIF
 NXTA1:     INC     A1L          ; BUMP AL
            BNE     TSTA1      
            INC     A1H
@@ -455,9 +474,20 @@ GO:        JSR     A1PC         ; STUFF PROGRAM COUNTER
            JMP     (PCL)        ; JUMP TO USER PROD.
 ;
 RWERROR    =       *            ; PRINT ERROR NUMBER
+
+.IFDEF BANK0ROM
+.import BANK0LIST
+.import BANK0RWERROR
+.export ERROR2
+           JMP     BANK0RWERROR
+LIST:      JMP     BANK0LIST
+           NOP
+           NOP
+.ELSE
            JSR     PRBYTE       ; PRINT THE OFFENDER
            LDA     #$A1         ; FOLLOWED BY A "!"
            JSR     COUT
+.ENDIF
 ERROR2:    JSR     NOSTOP       ; OUTPUT A CARRIAGE RETURN (NO STOPLST)
 ERROR:     JMP     MON
 ;

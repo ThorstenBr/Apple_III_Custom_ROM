@@ -103,7 +103,8 @@ CHPG       =    *
 ;
 ;
 DIAGN:     LDA     #$52+ROM     ; TURN OFF SCREEN, SET 2MHZ SPEED
-           STA     SYSD1        ; AND RUN OFF ROM
+           STA     SYSD1        ; AND RUN OFF ROM BANK 1
+.IFNDEF BANK0ROM ; we exclude the remaining code when building for ROM BANK 0
            LDX     #00          ; SET BANK SWITCH TO ZERO
            STX     SYSEO
            STX     BNKSW
@@ -300,7 +301,7 @@ ACIA:      CLC                  ; SET UP FOR ADDITION
            BEQ     ATD          ; YES, NEXT TEST
            LDX     #09          ; NO,        'ACIA' MESSAGE AND
            JSR     MESSERR      ; THEN SET ERROR FLAG
-.IFDEF ORIGINAL
+.IFNDEF DANIIBOOT
 ;
 ; A/D TEST ROUTINE
 ;
@@ -332,6 +333,7 @@ KEYPLUG:   LDA     KEYBD        ; IS KYBD PLUGGED IN?
            LDA     SYSD1        ; IS ERROR FLAG SET?
            BMI     SEX          ; ERROR HANG
 .ELSE
+; DAN ][ BOOTSTRAPPING...
 ATD:       LDA     SYSD1        ; IS ERROR FLAG SET? (1MHZ FLAG INDICATES AN ERROR)
 HANG:      BMI     HANG         ; ERROR HANG
 DAN2FIND:
@@ -377,10 +379,10 @@ RECON:     LDA     #$77         ; TURN ON SCREEN
            LDA     $C020
            LDA     #$10         ; TEST FOR "APPLE 1"
            AND     KEYBD
-.IFDEF ORIGINAL
-           BNE     DISKBOOT     ; NO, DO REGULAR BOOT
+.IFDEF DANIIBOOT
+           BNE     DAN2FIND     ; NO, check if DAN][ controller card present
 .ELSE
-           BNE     DAN2FIND     ; check if DAN][ controller card present
+           BNE     DISKBOOT     ; NO, DO REGULAR BOOT
 .ENDIF
 GOMONITOR: JSR     MONITOR      ; AND NEVER COME BACK
 DISKBOOT:  LDX     #01          ; READ BLOCK 0
@@ -399,10 +401,10 @@ DISKBOOT:  LDX     #01          ; READ BLOCK 0
            JSR     KEYIN
            BCS     DISKBOOT
 GOBOOT:    JMP     $A000        ; GO TO IT FOOL...
+.IFNDEF DANIIBOOT
 ;
 ; SYSTEM EXCERCISER
 ;
-.IFDEF ORIGINAL
            ; This cycles through the slot area when no keyboard is plugged.
            ; This was added as a means to help with board repairs.
            ; => Disabled to make space for DAN][ boot support
@@ -639,6 +641,7 @@ RAMWT:     EOR     #$FF
            STA     (PTRLO),Y
 RAMRD:     CMP     (PTRLO),Y
            BNE     RAMERR
+.ENDIF ; .IFNDEF BANK0ROM
 
 ;           .END
 ; F7FE

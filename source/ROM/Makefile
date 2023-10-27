@@ -2,14 +2,20 @@
 # Thorsten Brehm, 2023
 
 # assembler source
-ASM_FILES  := diskio.s saratests.s monitor.s
+DANII_ASM_FILES    := diskio.s saratests.s monitor.s
+ROMBANK0_ASM_FILES := diskio.s saratests.s disassembler.s monitor.s
 
 # assembler output
-OBJ_FILES  := $(addprefix bin/,$(ASM_FILES:.s=.o))
+DANII_OBJ_FILES  := $(addprefix bin-DANII/,$(DANII_ASM_FILES:.s=.o))
+
+ROMBANK0_OBJ_FILES := $(addprefix bin-BANK0ROM/,$(ROMBANK0_ASM_FILES:.s=.o))
 
 # output files
-ROM_FILE4K := bin/A3ROM_DANII_4KB.bin
-ROM_FILE8K := bin/A3ROM_DANII_8KB.bin
+DANII_ROM_FILE4K := bin-DANII/A3ROM_DANII_4KB.bin
+DANII_ROM_FILE8K := bin-DANII/A3ROM_DANII_8KB.bin
+
+BANK0ROM_FILE4K  := bin-BANK0ROM/A3ROM_BANK0_4KB.bin
+ROM_FILE8K       := bin-BANK0ROM/A3ROM_8KB.bin
 
 A3ROMPATCHER := python3 ../../tools/A3ROMPatcher/a3rompatch.py
 
@@ -17,35 +23,56 @@ A3ROMPATCHER := python3 ../../tools/A3ROMPatcher/a3rompatch.py
 LOG_PREFIX := "--\> "
 ECHO := @echo -e
 
-.SILENT: all clean bin list $(OBJ_FILES) $(ROM_FILE4K) $(ROM_FILE8K)
+.SILENT: all clean bin list $(DANII_ROM_FILE4K) $(DANII_ROM_FILE8K) $(BANK0ROM_FILE4K)
 
-all: bin $(ROM_FILE8K)
+all: bin-DANII bin-BANK0ROM ../../bin $(DANII_ROM_FILE8K) $(BANK0ROM_FILE4K)
 
 clean:
-	rm -f bin/*
+	rm -f bin/* bin-DANII/*
 
-bin:
+../../bin bin-DANII bin-BANK0ROM:
 	- mkdir $@
 
-bin/%.o: %.s Makefile
+# ROM VARIANT WITH DAN][ BOOTSTRAPPING
+bin-DANII/%.o: %.s Makefile
 	$(ECHO) "$(LOG_PREFIX) Assembling $<"
-	ca65 $(VERSION_INFO) -l $(@:.o=.lst) $< -o $@
+	ca65 $(VERSION_INFO) -DDANIIBOOT -l $(@:.o=.lst) $< -o $@
 
-$(ROM_FILE4K): $(OBJ_FILES)
+$(DANII_ROM_FILE4K): $(DANII_OBJ_FILES)
 	$(ECHO) "$(LOG_PREFIX) Linking $@"
-	ld65 -tnone $(OBJ_FILES) -o $@_
+	ld65 -tnone $(DANII_OBJ_FILES) -o $@_
 	$(A3ROMPATCHER) --patch $@_ 0xF6E5
-	cp $@_ ../../bin/$(notdir $@)
+	cp $@_ ../bin/$(notdir $@)
 	mv $@_ $@
 
-$(ROM_FILE8K): $(ROM_FILE4K)
-	$(A3ROMPATCHER) --4to8k $< $@
+$(DANII_ROM_FILE8K): $(DANII_ROM_FILE4K) $(BANK0ROM_FILE4K)
+#	$(A3ROMPATCHER) --4to8k $< $@
+	cat $(BANK0ROM_FILE4K) $(DANII_ROM_FILE4K) > $@
 	cp $@ ../../bin/$(notdir $@)
 
-$(ROM_FILE4K:.bin=.dump): $(ROM_FILE4K)
-	hexdump -C $(ROM_FILE4K) > $@
+# ROM VARIANT FOR BANK0 ROM
+bin-BANK0ROM/%.o: %.s Makefile
+	$(ECHO) "$(LOG_PREFIX) Assembling $<"
+	ca65 $(VERSION_INFO) -DBANK0ROM -l $(@:.o=.lst) $< -o $@
 
-dump: $(ROM_FILE4K:.bin=.dump)
+$(BANK0ROM_FILE4K): $(ROMBANK0_OBJ_FILES)
+	$(ECHO) "$(LOG_PREFIX) Linking $@"
+	ld65 -tnone $(ROMBANK0_OBJ_FILES) -o $@_
+#	$(A3ROMPATCHER) --patch $@_ 0xF6E5
+	cp $@_ ../bin/$(notdir $@)
+	mv $@_ $@
 
-diff: $(ROM_FILE4K:.bin=.dump)
-	meld ../../../ROM/a3rom.dump $(ROM_FILE4K:.bin=.dump)
+$(ROM_FILE8K): $(BANK0ROM_FILE4K)
+	cat $(DANII_ROM_FILE4K) > $@
+	cp $@ ../../bin/$(notdir $@)
+
+%.dump: %.bin
+	hexdump -C $< > $@
+
+%.dis: %.bin
+	da65 $< > $@
+
+dump: $(DANII_ROM_FILE4K:.bin=.dump) $(BANK0ROM_FILE4K:.bin=.dump) $(DANII_ROM_FILE4K:.bin=.dis) $(BANK0ROM_FILE4K:.bin=.dis)
+
+diff: $(DANII_ROM_FILE4K:.bin=.dump)
+	meld ../../../ROM/a3rom.dump $(DANII_ROM_FILE4K:.bin=.dump)
