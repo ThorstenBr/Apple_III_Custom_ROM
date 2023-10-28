@@ -15,13 +15,13 @@ Here's my Apple ///-specific ROM adapter: [https://github.com/ThorstenBr/Apple_I
 # Available ROMs
 The [/bin](bin) folder contains the following ROM variants for the Apple ///:
 
-* [A3ROM_ORIGINAL_4KB.bin](bin/A3ROM_ORIGINAL_4KB.bin): Original 4KB ROM variant for the Apple ///. In case you just want to replace a defective ROM with an original variant.
+* [A3ROM_ORIGINAL_4KB.bin](bin/A3ROM_ORIGINAL_4KB.bin): Original 4KB ROM for the Apple ///. In case you just want to replace a defective ROM with an original.
 
-* [A3ROM_ORIGINAL_DISASS_8KB.bin](bin/A3ROM_ORIGINAL_DISASS_8KB.bin): 8KB ROM which contains the original (unmodified) Apple /// ROM in the default ROM bank (bank 1). The alternate ROM bank 0 contains an adapted ROM variant with improved "monitor". The disassembler was added to ROM bank 0.
+* [A3ROM_ORIGINAL_DISASS_8KB.bin](bin/A3ROM_ORIGINAL_EXTMONITOR_8KB.bin): 8KB ROM which contains the original (unmodified) Apple /// ROM in the default ROM bank (bank 1). The alternate ROM bank 0 contains an adapted ROM variant with improved "debug monitor" (currently adds a disassembler).
 
 * [A3ROM_DANII_4KB.bin](bin/A3ROM_DANII_4KB.bin): Custom 4KB Apple /// ROM variant. Adapted to support direct bootstrapping of volumes from the [DAN II Controller](https://github.com/ThorstenBr/Apple2Card) card.
 
-* [A3ROM_DANII_DISASS_8KB.bin](bin/A3ROM_DANII_DISASS_8KB.bin): Custom 8KB Apple /// ROM variant. Default ROM bank 1 contains the adapted ROM to support direct bootstrapping of volumes from the [DAN II Controller](https://github.com/ThorstenBr/Apple2Card) card. The alternate ROM bank 0 contains an adapted ROM variant with improved "monitor". The disassembler was added to ROM bank 0.
+* [A3ROM_DANII_DISASS_8KB.bin](bin/A3ROM_DANII_EXTMONITOR_8KB.bin): Custom 8KB Apple /// ROM variant. Default ROM bank 1 contains the adapted ROM to support direct bootstrapping of volumes from the [DAN II Controller](https://github.com/ThorstenBr/Apple2Card) card. The alternate ROM bank 0 contains an adapted ROM variant with improved "debug monitor" (currently adds a disassembler).
 
 # Using the Custom ROM Bank
 The Apple /// has two ROM banks, each is 4KB. Apple /// were orignally only shipped with a 4KB ROM, which is mapped to ROM bank 1.
