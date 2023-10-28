@@ -12,14 +12,11 @@ Currently, ROMs with the following functionality are available:
     So, by installing a larger ROM, we have the necessary space to copy missing disassembler routine from the Apple II and add it to the Apple /// ROM.
 
 ## Custom ROM Adapter
-The Apple /// mainboard expects a ROM with the pinout of the "2532-type" ROM. Using an adapter it is possible to plug the more common 27c32/27c64 4KB/8KB EPROMs.
-However, the Apple /// chassis leaves extremely little clearance, so general purpose ROM adapters won't work.
+If you need an adapter to plug a standard (E)EPROM on to the Apple /// mainboard, here's my PCB design which fits into the tight space of the Apple ///:
 
-Here's my Apple ///-specific ROM adapter: [https://github.com/ThorstenBr/Apple_III_ROM_Adapter](https://github.com/ThorstenBr/Apple_III_ROM_Adapter).
-This PCB was designed to exactly fit into the restricted space inside the Apple ///.
-It works well with standard **27c64** EPROMs or **28c64** EEPROMs.
+[https://github.com/ThorstenBr/Apple_III_ROM_Adapter](https://github.com/ThorstenBr/Apple_III_ROM_Adapter).
 
-# Available ROMs
+## Available ROMs
 The [/bin](bin) folder contains the following ROM variants for the Apple ///:
 
 * [**A3ROM_ORIGINAL_4KB.bin**](bin/A3ROM_ORIGINAL_4KB.bin)
@@ -40,7 +37,7 @@ The [/bin](bin) folder contains the following ROM variants for the Apple ///:
     Custom 8KB Apple /// ROM variant. Default ROM bank 1 contains the adapted ROM to support direct bootstrapping of volumes from the [DAN II Controller](https://github.com/ThorstenBr/Apple2Card) card.
     The alternate ROM bank 0 contains an adapted ROM variant with improved "debug monitor" (currently adds a disassembler).
 
-# Using the Custom ROM Bank
+## Using the Custom ROM Bank
 The Apple /// has two ROM banks, each is 4KB. Apple /// were orignally only shipped with a 4KB ROM, which is mapped to ROM bank 1.
 ROM bank 0 could be activated, but was empty (would show random data).
 
