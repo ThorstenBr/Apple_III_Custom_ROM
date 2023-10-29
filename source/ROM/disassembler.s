@@ -14,7 +14,17 @@
 .ORG $A200  ; for testing only
 .ENDIF
 
-.EXPORT BANK0LIST
+.EXPORT BANK0LIST  ; BANK0 variant of "LIST"
+.EXPORT BANK0A1PC  ; BANK0 variant of "A1PC", restoring registers
+.EXPORT SAVE       ; save registers
+.EXPORT RESTORE    ; restore registers
+
+.IFDEF BANK0ROM
+.EXPORT BANK0RWERROR
+.EXPORT BANK0IRQ   ; BANK0 variant of "IRQ" vector
+.IMPORT MON
+.IMPORT ERROR2
+.ENDIF
 
 ; Apple III ROM routines
 COUT       = $FC39
@@ -27,11 +37,17 @@ ENVREG     = $FFDF ; Environment Register
 BEEPER     = $C040 ; beep!
 
 ; Local zero page registers (non-standard, not normally used by Apple /// ROM)
-LMNEM      = $54    ; $2c
-RMNEM      = $55    ; $2d
-FORMAT     = $56    ; $2e
-LASTIN     = $57    ; $2f
-LENGTH     = LASTIN ; $2f
+DBGREGS    = $4F
+ACC        = DBGREGS
+XREG       = DBGREGS+1
+YREG       = DBGREGS+2
+STATUS     = DBGREGS+3
+SPNT       = DBGREGS+4
+LMNEM      = DBGREGS+5
+RMNEM      = DBGREGS+6
+FORMAT     = DBGREGS+7
+LASTIN     = DBGREGS+8
+LENGTH     = LASTIN
 
 ; Apple III zero page registers
 SCRNLOC    =    $58
@@ -64,6 +80,8 @@ ENTRY:          BIT BEEPER
                 STA PCH
                 LDA #$00
                 STA PCL
+                JSR INSDS1
+                JSR RGDSP1
 :               LDX #$00
                 JSR BANK0LIST
                 JSR RDKEY
@@ -407,6 +425,54 @@ MNEMR:          .byte   $d8
                 .byte   $a2               ;(E) format
                 .byte   $c8
 
+; register display (A/X/Y/P/S)
+RGDSP1:         lda     #$45
+                sta     A3L
+                lda     #$00
+                sta     A3H
+                ldx     #$fb
+RDSP1:          lda     #$a0
+                jsr     COUT
+                lda     RTBL-251,x
+                jsr     COUT
+                lda     #$bd
+                jsr     COUT
+                lda     ACC+5,x         ;(this is DFB $B5,$4A in listing)
+                jsr     PRBYTE
+                inx
+                bmi     RDSP1
+                jmp     CROUT
+
+RTBL:           ASCHI 'A'
+                ASCHI 'X'
+                ASCHI 'Y'
+                ASCHI 'P'
+                ASCHI 'S'
+
+; save registers and flags when breaking execution
+SAVE:           sta     ACC
+SAV1:           stx     XREG
+                sty     YREG
+                php
+                pla
+                sta     STATUS
+                tsx
+                stx     SPNT
+                cld
+                rts
+
+; restore registers and flags before continuing execution
+RESTORE:        lda     STATUS
+                pha
+                lda     ACC
+RESTR1:         ldx     XREG
+                ldy     YREG
+                plp
+                rts
+
+BANK0A1PC:      JSR     A1PC         ; STUFF PROGRAM COUNTER
+                JMP     RESTORE      ; restore registers and flags, then return
+
 .IFDEF BANK0ROM
 ; we needed to remove a few bytes behind CMDTAB/CMDVEC, since we extended the tables for the
 ; new "LIST" command. The following routine was moved to here instead...
@@ -417,12 +483,29 @@ NXTA4:          INC     A4L          ; BUMP 16 BIT POINTERS
                 INC     A4H
 GONXTA1:        JMP     NXTA1
 
-.export BANK0RWERROR
-.import ERROR2
 BANK0RWERROR:   JSR     PRBYTE       ; PRINT THE OFFENDER
                 LDA     #$A1         ; FOLLOWED BY A "!"
                 JSR     COUT
                 JMP     ERROR2
+
+BANK0IRQ:       STA     ACC
+                PLA
+                pha
+                asl     A
+                asl     A
+                asl     A
+                bmi     BREAK
+                jmp     $FFCD        ; default APPLE /// IRQ vector in RAM
+
+BREAK:          plp
+                jsr     SAV1
+                pla
+                sta     PCL
+                pla
+                sta     PCH
+OLDBRK:         jsr     INSDS1
+                jsr     RGDSP1
+                jmp     MON
 
                 SPACER3 = *
                 ; fill the ROM area up to $F7FE

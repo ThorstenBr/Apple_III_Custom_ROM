@@ -200,6 +200,18 @@ IBDRVN     =    IBSLOT+1
 IBBUFP     =    IBSLOT+4
 IBCMD      =    IBSLOT+6
 
+.IFDEF BANK0ROM
+; when building the BANK0 ROM, we need to export some symbols - and import others from the disassembler
+.export MON
+.export ERROR2
+.export NXTA1
+.import NXTA4
+.import BANK0A1PC
+.import BANK0LIST
+.import BANK0RWERROR
+.import BANK0IRQ
+.ENDIF
+
 ENTRY      =    *
            TSX
            STX     STACK
@@ -309,8 +321,6 @@ CMDVEC     =    *
            .BYTE   $39          ; CRMON-1
 .IFDEF BANK0ROM
            .BYTE   <LIST-1      ; LIST-1
-.import NXTA4
-.export NXTA1
 SPACER1 = *
 .REPEAT $F994-SPACER1
            .BYTE $FF
@@ -470,15 +480,16 @@ USER:      JMP     USERADR
 ;
 JUMP:      PLA
            PLA                  ; LEAVE STACK WITH NOTHIN' ON IT.
+.IFDEF BANK0ROM
+GO:        JSR     BANK0A1PC    ; alternate implementation, which restores registers
+.ELSE
 GO:        JSR     A1PC         ; STUFF PROGRAM COUNTER
+.ENDIF
            JMP     (PCL)        ; JUMP TO USER PROD.
 ;
 RWERROR    =       *            ; PRINT ERROR NUMBER
 
 .IFDEF BANK0ROM
-.import BANK0LIST
-.import BANK0RWERROR
-.export ERROR2
            JMP     BANK0RWERROR
 LIST:      JMP     BANK0LIST
            NOP
@@ -1138,6 +1149,10 @@ ESCTABL:   .BYTE   $CC,$D0,$D3,$B4,$B8,$88,$95,$8A,$8B,$00
       
 NMI:       .WORD   $FFCA  
 RESET:     .WORD   DIAGN        ; NOTHING
+.IFDEF BANK0ROM
+IRQ:       .WORD   BANK0IRQ
+.ELSE
 IRQ:       .WORD   $FFCD
+.ENDIF
 
 ;          .END
