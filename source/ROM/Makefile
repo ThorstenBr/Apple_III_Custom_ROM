@@ -32,9 +32,9 @@ ECHO := @echo -e
 all: bin-DANII bin-BANK0ROM bin-ORIGINAL ../../bin $(DANII_ROM_FILE8K) $(BANK0ROM_FILE4K) $(ORIGINAL_ROM_FILE8K) $(ORIGINAL_ROM_FILE4K)
 
 clean:
-	rm -f bin/* bin-DANII/* bin-ORIGINAL/*
+	rm -f bin-DANII/* bin-ORIGINAL/* bin-BANK0ROM/* bin-TEST/*
 
-../../bin bin-DANII bin-BANK0ROM bin-ORIGINAL:
+../../bin bin-DANII bin-BANK0ROM bin-ORIGINAL bin-TEST:
 	- mkdir $@
 
 # ROM BANK 1 VARIANT WITH DAN][ BOOTSTRAPPING
@@ -44,7 +44,7 @@ bin-DANII/%.o: %.s Makefile
 
 $(DANII_ROM_FILE4K): $(DANII_OBJ_FILES)
 	$(ECHO) "$(LOG_PREFIX) Linking $@"
-	ld65 -tnone $(DANII_OBJ_FILES) -o $@_
+	ld65 -tnone $(DANII_OBJ_FILES) -m $(@:.bin=.map) -o $@_
 	$(A3ROMPATCHER) --patch $@_ 0xF6E5
 	cp $@_ ../../bin/$(notdir $@)
 	mv $@_ $@
@@ -61,7 +61,7 @@ bin-BANK0ROM/%.o: %.s Makefile
 
 $(BANK0ROM_FILE4K): $(ROMBANK0_OBJ_FILES)
 	$(ECHO) "$(LOG_PREFIX) Linking $@"
-	ld65 -tnone $(ROMBANK0_OBJ_FILES) -o $@_
+	ld65 -tnone $(ROMBANK0_OBJ_FILES) -m $(@:.bin=.map) -o $@_
 	$(A3ROMPATCHER) --patch $@_ 0xF7FF
 	mv $@_ $@
 
@@ -72,13 +72,22 @@ bin-ORIGINAL/%.o: %.s Makefile
 
 $(ORIGINAL_ROM_FILE4K): $(ORIGINAL_OBJ_FILES)
 	$(ECHO) "$(LOG_PREFIX) Linking $@"
-	ld65 -tnone $(ORIGINAL_OBJ_FILES) -o $@_
+	ld65 -tnone $(ORIGINAL_OBJ_FILES) -m $(@:.bin=.map) -o $@_
 	cp $@_ ../../bin/$(notdir $@)
 	mv $@_ $@
 
 $(ORIGINAL_ROM_FILE8K): $(ORIGINAL_ROM_FILE4K) $(BANK0ROM_FILE4K)
 	cat $(BANK0ROM_FILE4K) $(ORIGINAL_ROM_FILE4K) > $@
 	cp $@ ../../bin/$(notdir $@)
+
+# TEST
+bin-TEST/%.o: %.s Makefile
+	$(ECHO) "$(LOG_PREFIX) Assembling $<"
+	ca65 -l $(@:.o=.lst) $< -o $@
+
+bin-TEST/test.bin: bin-TEST/disassembler.o
+	$(ECHO) "$(LOG_PREFIX) Linking $@"
+	ld65 -tnone $< -m $(@:.bin=.map) -o $@
 
 %.dump: %.bin
 	hexdump -C $< > $@
@@ -90,3 +99,6 @@ dump: $(DANII_ROM_FILE4K:.bin=.dis) $(DANII_ROM_FILE8K:.bin=.dis) $(BANK0ROM_FIL
 
 diff: $(DANII_ROM_FILE4K:.bin=.dump)
 	meld ../../../ROM/a3rom.dump $(DANII_ROM_FILE4K:.bin=.dump)
+
+test: bin-TEST bin-TEST/test.bin
+

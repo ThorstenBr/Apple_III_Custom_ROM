@@ -65,7 +65,7 @@ ENTRY:          BIT BEEPER
                 LDA #$00
                 STA PCL
 :               LDX #$00
-                JSR LIST
+                JSR BANK0LIST
                 JSR RDKEY
                 CMP #' '+$80
                 BEQ :-
