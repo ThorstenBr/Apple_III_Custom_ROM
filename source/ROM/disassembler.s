@@ -479,9 +479,9 @@ BANK0A1PC:      JSR     A1PC         ; STUFF PROGRAM COUNTER
 .export NXTA4
 .import NXTA1
 NXTA4:          INC     A4L          ; BUMP 16 BIT POINTERS
-                BEQ     GONXTA1
+                BNE     BANK0NXTA1
                 INC     A4H
-GONXTA1:        JMP     NXTA1
+BANK0NXTA1:     JMP     NXTA1
 
 BANK0RWERROR:   JSR     PRBYTE       ; PRINT THE OFFENDER
                 LDA     #$A1         ; FOLLOWED BY A "!"
