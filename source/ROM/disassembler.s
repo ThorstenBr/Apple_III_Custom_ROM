@@ -22,8 +22,8 @@
 .IFDEF BANK0ROM
 .EXPORT BANK0RWERROR
 .EXPORT BANK0IRQ   ; BANK0 variant of "IRQ" vector
+.EXPORT RGDSP1
 .IMPORT MON
-.IMPORT ERROR2
 .ENDIF
 
 ; Apple III ROM routines
@@ -478,6 +478,9 @@ BANK0A1PC:      JSR     A1PC         ; STUFF PROGRAM COUNTER
 ; new "LIST" command. The following routine was moved to here instead...
 .export NXTA4
 .import NXTA1
+.export ERROR2
+ERROR2:         JSR     NOSTOP       ; OUTPUT A CARRIAGE RETURN (NO STOPLST)
+
 NXTA4:          INC     A4L          ; BUMP 16 BIT POINTERS
                 BNE     BANK0NXTA1
                 INC     A4H
@@ -488,6 +491,7 @@ BANK0RWERROR:   JSR     PRBYTE       ; PRINT THE OFFENDER
                 JSR     COUT
                 JMP     ERROR2
 
+; alternate IRQ handler to catch "BREAK" instructions for debugging
 BANK0IRQ:       STA     ACC
                 PLA
                 pha
@@ -496,7 +500,6 @@ BANK0IRQ:       STA     ACC
                 asl     A
                 bmi     BREAK
                 jmp     $FFCD        ; default APPLE /// IRQ vector in RAM
-
 BREAK:          plp
                 jsr     SAV1
                 pla

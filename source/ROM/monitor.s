@@ -203,9 +203,11 @@ IBCMD      =    IBSLOT+6
 .IFDEF BANK0ROM
 ; when building the BANK0 ROM, we need to export some symbols - and import others from the disassembler
 .export MON
-.export ERROR2
+.export TSTA1
 .export NXTA1
 .import NXTA4
+.import RGDSP1
+.import ERROR2
 .import BANK0A1PC
 .import BANK0LIST
 .import BANK0RWERROR
@@ -299,6 +301,7 @@ CMDTAB     =    *
            .BYTE   $C6          ; CR   =CARRIAGE RETURN
 .IFDEF BANK0ROM
            .BYTE   $05          ; L    =LIST/DISASSEMBLER
+           .BYTE   $be          ;^E    =OPEN AND DISPLAY REGISTERS
 .ENDIF
 
 CMDVEC     =    *
@@ -321,6 +324,7 @@ CMDVEC     =    *
            .BYTE   $39          ; CRMON-1
 .IFDEF BANK0ROM
            .BYTE   <LIST-1      ; LIST-1
+           .BYTE   <REGZ-1      ; REGZ-1
 SPACER1 = *
 .REPEAT $F994-SPACER1
            .BYTE $FF
@@ -492,14 +496,16 @@ RWERROR    =       *            ; PRINT ERROR NUMBER
 .IFDEF BANK0ROM
            JMP     BANK0RWERROR
 LIST:      JMP     BANK0LIST
+REGZ:      JMP     RGDSP1
            NOP
            NOP
 .ELSE
            JSR     PRBYTE       ; PRINT THE OFFENDER
            LDA     #$A1         ; FOLLOWED BY A "!"
            JSR     COUT
-.ENDIF
 ERROR2:    JSR     NOSTOP       ; OUTPUT A CARRIAGE RETURN (NO STOPLST)
+;FAA2
+.ENDIF
 ERROR:     JMP     MON
 ;
 DEST:      LDA     A2L          ; COPY A2 TO A4 FOR DESTINATION OP
