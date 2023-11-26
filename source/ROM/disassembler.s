@@ -494,21 +494,21 @@ BANK0RWERROR:   JSR     PRBYTE       ; PRINT THE OFFENDER
 ; alternate IRQ handler to catch "BREAK" instructions for debugging
 BANK0IRQ:       STA     ACC
                 PLA
-                pha
-                asl     A
-                asl     A
-                asl     A
-                bmi     BREAK
-                jmp     $FFCD        ; default APPLE /// IRQ vector in RAM
-BREAK:          plp
-                jsr     SAV1
-                pla
-                sta     PCL
-                pla
-                sta     PCH
-OLDBRK:         jsr     INSDS1
-                jsr     RGDSP1
-                jmp     MON
+                PHA
+                ASL     A
+                ASL     A
+                ASL     A
+                BMI     BREAK
+                JMP     $FFCD        ; default APPLE /// IRQ vector in RAM
+BREAK:          PLP
+                JSR     SAV1
+                PLA
+                STA     PCL
+                PLA
+                STA     PCH
+OLDBRK:         JSR     INSDS1
+                JSR     RGDSP1
+                JMP     MON
 
                 SPACER3 = *
                 ; fill the ROM area up to $F7FE
