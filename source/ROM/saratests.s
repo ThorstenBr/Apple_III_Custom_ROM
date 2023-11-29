@@ -336,6 +336,7 @@ KEYPLUG:   LDA     KEYBD        ; IS KYBD PLUGGED IN?
 ; DAN ][ BOOTSTRAPPING...
 ATD:       LDA     SYSD1        ; IS ERROR FLAG SET? (1MHZ FLAG INDICATES AN ERROR)
 HANG:      BMI     HANG         ; ERROR HANG
+           BPL     RECON        ; diagnostics OK: normal startup
 DAN2FIND:
            LDA     KEYBD        ; load keyboard modifiers
            AND     #$08         ; check "alpha lock" key pressed?
@@ -357,9 +358,10 @@ DAN2NXSLOT:DEX                  ; calculate next slot
            LDY     #$FF-DAN2IDOFS
            LDA     (DAN2_DENT),Y; load DAN][ ProDOS handler entry (lower byte)
            STA     DAN2_DENT    ; update slot address (now points to ProDOS handler entry)
-           LDA     DAN2_DENT+1  ; load slot address (upper byte) and return
+           TXA                  ; slot number in A
+           ASL     A            ; shift by 2
+           ASL     A
            BNE     DAN2BOOT     ; boot from DAN][
-DAN2GO:    JMP     (DAN2_DENT)  ; jump to DAN][ controller handler
 
            SPACER1 = *
            .REPEAT $F686-SPACER1
@@ -427,10 +429,8 @@ SEX3:      LDA     SLT1,Y       ; EXCERCISE
 .ELSE
            ; NO SEX: the system excerciser is disabled to make space for the DAN][ boot support.
 DAN2BOOT:
-           ; enters with slot number of DANII card in A
-           ASL     A            ; shift by 4
-           ASL     A
-           ASL     A
+           ; enters with slot number (already shifted by 2) of DANII card in A
+           ASL     A            ; shift by 2 more
            ASL     A
            STA     DAN2_UNIT
            LDA     #$A3         ; load Apple /// boot block from the controller
@@ -444,6 +444,7 @@ DAN2BOOT:
            JSR     DAN2GO       ; call DANII handler to load boot block
            BCS     GOMONITOR    ; enter monitor when loading failed
            BCC     GOBOOT       ; unconditional branch to loaded boot program
+DAN2GO:    JMP     (DAN2_DENT)  ; jump to DAN][ controller handler
 
 DAN2IDLEN = $05                       ; check 5 bytes in ROM for card detection
 DAN2IDOFS = $0A                       ; offset where to find the DAN2 card's ID
@@ -454,7 +455,7 @@ DAN2ID:    .BYTE $A9,$01,$9D,$FB,$BF  ; ROM bytes at offset $0A: "LDA #$01;STA $
            .BYTE $FF
            ;.BYTE $F6E5-SPACER2
            .ENDREP
-           .BYTE $69 ; ROM CHECKSUM
+           .BYTE $A4 ; ROM CHECKSUM
 ;F6E6
 .ENDIF
 ;
